@@ -156,4 +156,32 @@ public class RoomService {
             throw new IllegalArgumentException("Capacity must be greater than 0.");
         }
     }
+    
+    public boolean isAvailable(int roomId, String date, String startTime, String endTime) {
+    String sql = """
+        SELECT 1
+        FROM reservations
+        WHERE room_id = ?
+          AND date = ?
+          AND status = 'CONFIRMED'
+          AND (? < end_time AND ? > start_time)
+        LIMIT 1
+    """;
+
+    try (Connection conn = DB.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+        ps.setInt(1, roomId);
+        ps.setString(2, date);
+        ps.setString(3, startTime);
+        ps.setString(4, endTime);
+
+        try (ResultSet rs = ps.executeQuery()) {
+            return !rs.next(); // true = available
+        }
+
+    } catch (SQLException e) {
+        throw new RuntimeException("DB error (room availability): " + e.getMessage(), e);
+    }
+}
 }

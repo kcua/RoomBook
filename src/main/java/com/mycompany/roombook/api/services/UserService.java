@@ -36,7 +36,8 @@ public class UserService {
 
             ps.setString(1, req.getName());
             ps.setString(2, req.getEmail());
-            ps.setString(3, req.getPassword());
+            String hashedPassword = PasswordUtil.hashPassword(req.getPassword());
+            ps.setString(3, hashedPassword);
             ps.setString(4, req.getRole());
 
             ps.executeUpdate();
@@ -52,7 +53,7 @@ public class UserService {
             user.setUserId(newId);
             user.setName(req.getName());
             user.setEmail(req.getEmail());
-            user.setPassword(req.getPassword());
+            user.setPassword(hashedPassword);
             user.setRole(req.getRole());
 
             return user;
@@ -75,7 +76,8 @@ public class UserService {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, req.getEmail());
-            ps.setString(2, req.getPassword());
+            String hashedPassword = PasswordUtil.hashPassword(req.getPassword());
+            ps.setString(2, hashedPassword);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {

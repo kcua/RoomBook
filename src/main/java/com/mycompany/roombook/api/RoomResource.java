@@ -17,6 +17,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Map;
+import jakarta.ws.rs.QueryParam;
 
 /**
  *
@@ -32,6 +33,32 @@ public class RoomResource {
     public List<Room> getRooms() {
         return service.getAll();
     }
+    
+    @GET
+@Path("/{id}/availability")
+@Produces(MediaType.APPLICATION_JSON)
+public Object checkAvailability(
+        @PathParam("id") int id,
+        @QueryParam("date") String date,
+        @QueryParam("startTime") String startTime,
+        @QueryParam("endTime") String endTime) {
+
+    boolean available = service.isAvailable(id, date, startTime, endTime);
+
+    if (available) {
+        return Map.of(
+                "roomId", id,
+                "available", true,
+                "message", "Room is available."
+        );
+    } else {
+        return Map.of(
+                "roomId", id,
+                "available", false,
+                "message", "Room is not available for this date and time."
+        );
+    }
+}
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
