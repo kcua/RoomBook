@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RoomBook</title>
+</head>
+<body>
+
+<h1>RoomBook - Booking System</h1>
+
+<h2>Login</h2>
+<input id="loginEmail" placeholder="Email">
+<input id="loginPassword" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p id="loginResult"></p>
+
+<hr>
+
+<h2>Create Booking</h2>
+
+<label>Room:</label>
+<select id="roomSelect"></select><br><br>
+
+<label>Date:</label>
+<input id="bookingDate" type="date"><br><br>
+
+<label>Start Time:</label>
+<input id="startTime" type="time"><br><br>
+
+<label>End Time:</label>
+<input id="endTime" type="time"><br><br>
+
+<button onclick="checkAvailability()">Check Availability</button>
+<button onclick="createBooking()">Create Booking</button>
+
+<p id="bookingResult"></p>
+
+<hr>
+
+<h2>My Reservations</h2>
+<button onclick="loadReservations()">Load My Reservations</button>
+<ul id="reservationsList"></ul>
+
+<script>
+const API = "http://localhost:8080/api";
+let loggedInUserId = null;
+
+window.onload = function() {
+    loadRooms();
+};
+
+function login() {
+    fetch(API + "/users/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            email: document.getElementById("loginEmail").value,
+            password: document.getElementById("loginPassword").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.userId) {
+            loggedInUserId = data.userId;
+            document.getElementById("loginResult").innerText =
+                "Logged in as " + data.name + " (User ID: " + data.userId + ")";
+        } else {
+            document.getElementById("loginResult").innerText =
+                data.error || "Login failed";
+        }
+    });
+}
+
+function loadRooms() {
+    fetch(API + "/rooms")
+    .then(res => res.json())
+    .then(data => {
+        const select = document.getElementById("roomSelect");
+        select.innerHTML = "";
+
+        data.forEach(room => {
+            const option = document.createElement("option");
+            option.value = room.id;
+            option.textContent = room.name + " - Capacity: " + room.capacity;
+            select.appendChild(option);
+        });
+    });
+}
+
+function checkAvailability() {
+    const roomId = document.getElementById("roomSelect").value;
+    const date = document.getElementById("bookingDate").value;
+    const startTime = document.getElementById("startTime").value;
+    const endTime = document.getElementById("endTime").value;
+
+    fetch(`${API}/rooms/${roomId}/availability?date=${date}&startTime=${startTime}&endTime=${endTime}`)
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("bookingResult").innerText = data.message;
+    });
+}
+
+function createBooking() {
+    if (!loggedInUserId) {
+        document.getElementById("bookingResult").innerText = "Please login first.";
+        return;
+    }
+
+    fetch(API + "/reservations", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            userId: loggedInUserId,
+            roomId: parseInt(document.getElementById("roomSelect").value),
+            date: document.getElementById("bookingDate").value,
+            startTime: document.getElementById("startTime").value,
+            endTime: document.getElementById("endTime").value
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById("bookingResult").innerText = data.error;
+        } else {
+            document.getElementById("bookingResult").innerText =
+                "Booking created successfully!";
+            loadReservations();
+        }
+    });
+}
+
+function loadReservations() {
+    if (!loggedInUserId) {
+        alert("Please login first.");
+        return;
+    }
+
+    fetch(API + "/reservations/user/" + loggedInUserId)
+    .then(res => res.json())
+    .then(data => {
+        const list = document.getElementById("reservationsList");
+        list.innerHTML = "";
+
+        data.forEach(r => {
+            const li = document.createElement("li");
+            li.textContent =
+                "Room " + r.roomId + " | " +
+                r.date + " | " +
+                r.startTime + " - " + r.endTime +
+                " | Status: " + r.status;
+            list.appendChild(li);
+        });
+    });
+}
+</script>
+
+</body>
+</html>
