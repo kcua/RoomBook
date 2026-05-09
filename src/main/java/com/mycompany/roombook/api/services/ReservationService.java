@@ -116,58 +116,94 @@ public class ReservationService {
     }
     
     public List<Reservation> getAll() {
-    List<Reservation> reservations = new ArrayList<>();
+        List<Reservation> reservations = new ArrayList<>();
 
-    String sql = """
-        SELECT res_id, user_id, room_id, date, start_time, end_time, status
-        FROM reservations
-        ORDER BY res_id DESC
-    """;
+        String sql = """
+            SELECT res_id, user_id, room_id, date, start_time, end_time, status
+            FROM reservations
+            ORDER BY res_id DESC
+        """;
 
-    try (Connection conn = DB.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql);
-         ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-        while (rs.next()) {
-            Reservation r = new Reservation();
-            r.setResId(rs.getInt("res_id"));
-            r.setUserId(rs.getInt("user_id"));
-            r.setRoomId(rs.getInt("room_id"));
-            r.setDate(rs.getString("date"));
-            r.setStartTime(rs.getString("start_time"));
-            r.setEndTime(rs.getString("end_time"));
-            r.setStatus(rs.getString("status"));
-            reservations.add(r);
+            while (rs.next()) {
+                Reservation r = new Reservation();
+                r.setResId(rs.getInt("res_id"));
+                r.setUserId(rs.getInt("user_id"));
+                r.setRoomId(rs.getInt("room_id"));
+                r.setDate(rs.getString("date"));
+                r.setStartTime(rs.getString("start_time"));
+                r.setEndTime(rs.getString("end_time"));
+                r.setStatus(rs.getString("status"));
+                reservations.add(r);
+            }
+
+            return reservations;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (list reservations): " + e.getMessage(), e);
         }
-
-        return reservations;
-
-    } catch (SQLException e) {
-        throw new RuntimeException("DB error (list reservations): " + e.getMessage(), e);
     }
-}
+
+    public List<Reservation> getByUser(int userId) {
+        List<Reservation> reservations = new ArrayList<>();
+
+        String sql = """
+            SELECT res_id, user_id, room_id, date, start_time, end_time, status
+            FROM reservations
+            WHERE user_id = ?
+            ORDER BY res_id DESC
+        """;
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Reservation r = new Reservation();
+                    r.setResId(rs.getInt("res_id"));
+                    r.setUserId(rs.getInt("user_id"));
+                    r.setRoomId(rs.getInt("room_id"));
+                    r.setDate(rs.getString("date"));
+                    r.setStartTime(rs.getString("start_time"));
+                    r.setEndTime(rs.getString("end_time"));
+                    r.setStatus(rs.getString("status"));
+                    reservations.add(r);
+                }
+            }
+
+            return reservations;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (list user reservations): " + e.getMessage(), e);
+        }
+    }
     
     public String cancel(int resId) {
-    String sql = """
-        UPDATE reservations
-        SET status = 'CANCELLED'
-        WHERE res_id = ?
-    """;
+        String sql = """
+            UPDATE reservations
+            SET status = 'CANCELLED'
+            WHERE res_id = ?
+        """;
 
-    try (Connection conn = DB.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        ps.setInt(1, resId);
-        int rows = ps.executeUpdate();
+            ps.setInt(1, resId);
+            int rows = ps.executeUpdate();
 
-        if (rows == 0) {
-            throw new IllegalArgumentException("Reservation not found.");
+            if (rows == 0) {
+                throw new IllegalArgumentException("Reservation not found.");
+            }
+
+            return "Reservation cancelled successfully.";
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (cancel reservation): " + e.getMessage(), e);
         }
-
-        return "Reservation cancelled successfully.";
-
-    } catch (SQLException e) {
-        throw new RuntimeException("DB error (cancel reservation): " + e.getMessage(), e);
     }
-}
 }

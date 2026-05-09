@@ -32,6 +32,13 @@ public class ReservationResource {
         return service.getAll();
     }
 
+    @GET
+    @Path("/user/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Reservation> getByUser(@PathParam("userId") int userId) {
+        return service.getByUser(userId);
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -45,13 +52,13 @@ public class ReservationResource {
     }
     
     @DELETE
-@Path("/{id}")
-@Produces(MediaType.APPLICATION_JSON)
-public Object cancel(@PathParam("id") int id) {
-    try {
-        return Map.of("message", service.cancel(id));
-    } catch (IllegalArgumentException ex) {
-        return Map.of("error", ex.getMessage());
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Object cancel(@PathParam("id") int id) {
+        try {
+            return Map.of("message", service.cancel(id));
+        } catch (IllegalArgumentException ex) {
+            return Map.of("error", ex.getMessage());
+        }
     }
-}
 }

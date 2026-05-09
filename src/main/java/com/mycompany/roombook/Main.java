@@ -52,5 +52,14 @@ public class Main {
         // Start server
         HttpServer server = startServer();
         System.out.println("API available at " + BASE_URI + "hello");
+        System.out.println("Press Enter to stop the server.");
+
+        try {
+            System.in.read();
+        } catch (Exception e) {
+            System.out.println("Server input error: " + e.getMessage());
+        } finally {
+            server.shutdownNow();
+        }
     }
 }

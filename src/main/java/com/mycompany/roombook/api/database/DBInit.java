@@ -4,6 +4,7 @@
  */
 package com.mycompany.roombook.api.database;
 
+import com.mycompany.roombook.api.services.PasswordUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -62,6 +63,7 @@ public class DBInit {
             }
 
             seedRoomsIfEmpty(conn);
+            seedAdminIfMissing(conn);
 
             System.out.println("✔ Database initialized successfully.");
 
@@ -99,6 +101,27 @@ public class DBInit {
             insert.setInt(2, 20);
             insert.setString(3, "Floor 3");
             insert.setString(4, "Projector, Audio");
+            insert.executeUpdate();
+        }
+    }
+
+    private static void seedAdminIfMissing(Connection conn) throws Exception {
+        // Do not create another admin if one already exists.
+        try (PreparedStatement check = conn.prepareStatement("SELECT COUNT(*) FROM users WHERE UPPER(role) = 'ADMIN'");
+             ResultSet rs = check.executeQuery()) {
+
+            int count = rs.next() ? rs.getInt(1) : 0;
+            if (count > 0) return;
+        }
+
+        try (PreparedStatement insert = conn.prepareStatement(
+                "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)")) {
+
+            // Default admin account for managing rooms.
+            insert.setString(1, "Admin");
+            insert.setString(2, "admin@roombook.local");
+            insert.setString(3, PasswordUtil.hashPassword("admin123"));
+            insert.setString(4, "ADMIN");
             insert.executeUpdate();
         }
     }

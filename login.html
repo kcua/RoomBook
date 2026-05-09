@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomBook Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main class="auth-page login-page">
+    <section class="auth-panel login-panel">
+        <h1>RoomBook</h1>
+        <p>Sign in to book and manage meeting rooms.</p>
+
+        <div class="auth-form">
+            <div>
+                <label for="loginEmail">Email</label>
+                <input id="loginEmail" type="email" placeholder="you@example.com">
+            </div>
+
+            <div>
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" placeholder="Password">
+            </div>
+
+            <button onclick="login()">Login</button>
+        </div>
+
+        <p id="loginResult" class="status-message"></p>
+
+        <p class="auth-footer">Don't have an account? <a href="register.html">Register here</a></p>
+    </section>
+</main>
+
+<script src="login.js"></script>
+
+</body>
+</html>

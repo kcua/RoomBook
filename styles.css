@@ -1,0 +1,451 @@
+:root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-soft: #eef2f6;
+    --text: #17202a;
+    --muted: #657384;
+    --line: #d8dee6;
+    --primary: #176b87;
+    --primary-hover: #12566c;
+    --success-bg: #e8f6ef;
+    --success-text: #17643a;
+    --danger: #b42318;
+    --danger-bg: #fff1f0;
+    --shadow: 0 16px 40px rgba(23, 32, 42, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    color: var(--text);
+    background:
+        linear-gradient(rgba(246, 247, 249, 0.82), rgba(246, 247, 249, 0.9)),
+        url("RoomBook-Bg.png") center / cover fixed;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+button {
+    min-height: 42px;
+    border: 0;
+    border-radius: 6px;
+    padding: 0 16px;
+    color: #ffffff;
+    background: var(--primary);
+    cursor: pointer;
+}
+
+button:hover {
+    background: var(--primary-hover);
+}
+
+button.secondary {
+    color: var(--text);
+    background: var(--surface-soft);
+}
+
+button.secondary:hover {
+    background: #e0e7ef;
+}
+
+button.danger {
+    color: var(--danger);
+    background: var(--danger-bg);
+}
+
+button.danger:hover {
+    background: #ffe1df;
+}
+
+input,
+select {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0 12px;
+    color: var(--text);
+    background: #ffffff;
+}
+
+input:focus,
+select:focus {
+    outline: 3px solid rgba(23, 107, 135, 0.18);
+    border-color: var(--primary);
+}
+
+label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #344054;
+}
+
+a {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.app-shell {
+    width: min(1120px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 28px 0;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.brand h1,
+.auth-panel h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    letter-spacing: 0;
+}
+
+.brand p,
+.auth-panel p,
+.muted {
+    margin: 0;
+    color: var(--muted);
+}
+
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.layout-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) 1fr;
+    gap: 22px;
+    align-items: start;
+}
+
+.hidden {
+    display: none;
+}
+
+.panel,
+.auth-panel {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow);
+}
+
+.panel {
+    padding: 22px;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.panel h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.admin-panel {
+    margin-bottom: 22px;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 340px) 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.form-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.button-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.status-message {
+    min-height: 24px;
+    margin: 18px 0 0;
+    color: var(--muted);
+}
+
+.reservations-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rooms-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.reservation-item,
+.room-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    background: #ffffff;
+}
+
+.reservation-item.cancelled {
+    background: #f3f5f7;
+    color: var(--muted);
+}
+
+.reservation-main {
+    display: grid;
+    gap: 6px;
+}
+
+.room-main {
+    display: grid;
+    gap: 6px;
+}
+
+.room-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.reservation-room {
+    font-weight: 800;
+}
+
+.reservation-meta {
+    color: var(--muted);
+}
+
+.badge {
+    width: fit-content;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--success-text);
+    background: var(--success-bg);
+}
+
+.badge.cancelled {
+    color: var(--muted);
+    background: #e2e7ec;
+}
+
+.empty-state {
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 24px;
+    color: var(--muted);
+    text-align: center;
+    background: #ffffff;
+}
+
+.auth-page {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: 28px 16px;
+}
+
+.auth-panel {
+    width: min(430px, 100%);
+    padding: 30px;
+}
+
+.auth-panel form,
+.auth-form {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.auth-footer {
+    margin-top: 22px;
+    text-align: center;
+}
+
+.login-page {
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(120deg, rgba(23, 107, 135, 0.82), rgba(246, 247, 249, 0.7) 54%, rgba(255, 255, 255, 0.88)),
+        url("RoomBook-Bg.png") center / cover;
+}
+
+.login-page::before {
+    content: "";
+    position: absolute;
+    inset: 7% auto auto 7%;
+    width: min(460px, 64vw);
+    height: min(460px, 64vw);
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    border-radius: 28px;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.24) 0 1px,
+            transparent 1px 74px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.2) 0 1px,
+            transparent 1px 58px
+        );
+    transform: rotate(-8deg);
+}
+
+.login-page::after {
+    content: "";
+    position: absolute;
+    right: max(20px, 8vw);
+    bottom: max(22px, 9vh);
+    width: 240px;
+    height: 76px;
+    border-radius: 8px;
+    background:
+        linear-gradient(90deg, #176b87 0 30%, #ffffff 30% 36%, #f0b45d 36% 58%, #ffffff 58% 64%, #7aa874 64% 100%);
+    box-shadow: 0 24px 60px rgba(23, 32, 42, 0.18);
+    opacity: 0.82;
+}
+
+.login-panel {
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 26px 70px rgba(23, 32, 42, 0.24);
+    backdrop-filter: blur(14px);
+}
+
+.login-panel::before {
+    content: "";
+    display: block;
+    width: 54px;
+    height: 6px;
+    margin-bottom: 20px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--primary), #f0b45d);
+}
+
+.login-panel h1 {
+    color: #102a33;
+}
+
+.login-panel .auth-form {
+    gap: 18px;
+}
+
+.login-panel input {
+    border-color: rgba(23, 107, 135, 0.2);
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.login-panel button {
+    min-height: 48px;
+    margin-top: 2px;
+    background: linear-gradient(135deg, #176b87, #0f3f50);
+    box-shadow: 0 14px 24px rgba(23, 107, 135, 0.24);
+    font-weight: 800;
+}
+
+.login-panel button:hover {
+    background: linear-gradient(135deg, #1a7797, #12566c);
+}
+
+.login-panel .auth-footer {
+    padding-top: 18px;
+    border-top: 1px solid rgba(23, 107, 135, 0.14);
+}
+
+@media (max-width: 760px) {
+    .topbar,
+    .user-actions,
+    .layout-grid,
+    .admin-grid,
+    .reservation-item,
+    .room-item {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar,
+    .user-actions {
+        align-items: stretch;
+    }
+
+    .layout-grid {
+        display: grid;
+    }
+
+    .time-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .reservation-item button,
+    .room-actions button {
+        width: 100%;
+    }
+
+    .room-actions {
+        justify-content: stretch;
+    }
+
+    .login-page::before {
+        inset: 4% auto auto -24%;
+    }
+
+    .login-page::after {
+        right: 16px;
+        bottom: 16px;
+        width: 160px;
+        height: 52px;
+    }
+}

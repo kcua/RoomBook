@@ -19,6 +19,9 @@ import java.sql.Statement;
  * @author kcuar
  */
 public class UserService {
+    private static final String DEFAULT_ROLE = "USER";
+    private static final String ADMIN_ROLE = "ADMIN";
+
      public User register(UserRegisterRequest req) {
         validateRegister(req);
 
@@ -38,7 +41,8 @@ public class UserService {
             ps.setString(2, req.getEmail());
             String hashedPassword = PasswordUtil.hashPassword(req.getPassword());
             ps.setString(3, hashedPassword);
-            ps.setString(4, req.getRole());
+            // New users are regular users by default.
+            ps.setString(4, DEFAULT_ROLE);
 
             ps.executeUpdate();
 
@@ -54,7 +58,7 @@ public class UserService {
             user.setName(req.getName());
             user.setEmail(req.getEmail());
             user.setPassword(hashedPassword);
-            user.setRole(req.getRole());
+            user.setRole(DEFAULT_ROLE);
 
             return user;
 
@@ -129,8 +133,23 @@ public class UserService {
             throw new IllegalArgumentException("Password is required.");
         }
 
-        if (req.getRole() == null || req.getRole().isBlank()) {
-            throw new IllegalArgumentException("Role is required.");
+    }
+
+    // Returns true when the given user id belongs to an admin account.
+    public boolean isAdmin(int userId) {
+        String sql = "SELECT role FROM users WHERE user_id = ?";
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && ADMIN_ROLE.equalsIgnoreCase(rs.getString("role"));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (check admin role): " + e.getMessage(), e);
         }
     }
 

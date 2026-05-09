@@ -1,79 +1,182 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoomBook</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<h1>RoomBook - Booking System</h1>
+<main class="app-shell">
+    <header class="topbar">
+        <div class="brand">
+            <h1>RoomBook</h1>
+            <p>Book meeting rooms and manage your reservations.</p>
+        </div>
+        <div class="user-actions">
+            <p id="userStatus" class="muted"></p>
+            <button class="secondary" onclick="logout()">Logout</button>
+        </div>
+    </header>
 
-<h2>Login</h2>
-<input id="loginEmail" placeholder="Email">
-<input id="loginPassword" type="password" placeholder="Password">
-<button onclick="login()">Login</button>
-<p id="loginResult"></p>
+    <!-- This section is only shown when the logged-in user has the ADMIN role. -->
+    <section id="adminRoomsPanel" class="panel admin-panel hidden">
+        <div class="panel-header">
+            <div>
+                <h2>Room Management</h2>
+                <p class="muted">Admin controls for creating and updating rooms.</p>
+            </div>
+            <button class="secondary" onclick="resetRoomForm()">New Room</button>
+        </div>
 
-<hr>
+        <div class="admin-grid">
+            <div class="form-grid">
+                <input id="roomId" type="hidden">
 
-<h2>Create Booking</h2>
+                <div>
+                    <label for="roomName">Room Name</label>
+                    <input id="roomName" type="text">
+                </div>
 
-<label>Room:</label>
-<select id="roomSelect"></select><br><br>
+                <div>
+                    <label for="roomCapacity">Capacity</label>
+                    <input id="roomCapacity" type="number" min="1">
+                </div>
 
-<label>Date:</label>
-<input id="bookingDate" type="date"><br><br>
+                <div>
+                    <label for="roomLocation">Location</label>
+                    <input id="roomLocation" type="text">
+                </div>
 
-<label>Start Time:</label>
-<input id="startTime" type="time"><br><br>
+                <div>
+                    <label for="roomEquipment">Equipment</label>
+                    <input id="roomEquipment" type="text">
+                </div>
 
-<label>End Time:</label>
-<input id="endTime" type="time"><br><br>
+                <div class="button-row">
+                    <button onclick="saveRoom()">Save Room</button>
+                    <button class="secondary" onclick="resetRoomForm()">Clear</button>
+                </div>
 
-<button onclick="checkAvailability()">Check Availability</button>
-<button onclick="createBooking()">Create Booking</button>
+                <p id="roomResult" class="status-message"></p>
+            </div>
 
-<p id="bookingResult"></p>
+            <ul id="roomsList" class="rooms-list"></ul>
+        </div>
+    </section>
 
-<hr>
+    <section class="layout-grid">
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Create Booking</h2>
+            </div>
 
-<h2>My Reservations</h2>
-<button onclick="loadReservations()">Load My Reservations</button>
-<ul id="reservationsList"></ul>
+            <div class="form-grid">
+                <div>
+                    <label for="roomSelect">Room</label>
+                    <select id="roomSelect"></select>
+                </div>
+
+                <div>
+                    <label for="bookingDate">Date</label>
+                    <input id="bookingDate" type="date">
+                </div>
+
+                <div class="time-grid">
+                    <div>
+                        <label for="startTime">Start Time</label>
+                        <select id="startTime"></select>
+                    </div>
+
+                    <div>
+                        <label for="endTime">End Time</label>
+                        <select id="endTime"></select>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button class="secondary" onclick="checkAvailability()">Check Availability</button>
+                    <button onclick="createBooking()">Create Booking</button>
+                </div>
+
+                <p id="bookingResult" class="status-message"></p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <h2>My Reservations</h2>
+                    <p class="muted">Active and cancelled bookings.</p>
+                </div>
+                <button class="secondary" onclick="loadReservations()">Refresh</button>
+            </div>
+            <ul id="reservationsList" class="reservations-list"></ul>
+        </div>
+    </section>
+</main>
 
 <script>
-const API = "http://localhost:8080/api";
-let loggedInUserId = null;
+const ROOMBOOK_API = "http://localhost:8080/api";
 
+// Store the current user's details from localStorage after login.
+let loggedInUserId = localStorage.getItem("userId");
+let loggedInUserRole = localStorage.getItem("userRole");
+let roomsCache = [];
+
+// Runs when the page loads. It checks login status and loads the page data.
 window.onload = function() {
+    if (!loggedInUserId) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    const userName = localStorage.getItem("userName") || "User";
+    document.getElementById("userStatus").innerText =
+        "Logged in as " + userName + (loggedInUserRole ? " (" + loggedInUserRole + ")" : "");
+
+    if (loggedInUserRole === "ADMIN") {
+        // Admin users can see the room management controls.
+        document.getElementById("adminRoomsPanel").classList.remove("hidden");
+    }
+
+    loadHourOptions();
     loadRooms();
+    loadReservations();
 };
 
-function login() {
-    fetch(API + "/users/login", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            email: document.getElementById("loginEmail").value,
-            password: document.getElementById("loginPassword").value
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.userId) {
-            loggedInUserId = data.userId;
-            document.getElementById("loginResult").innerText =
-                "Logged in as " + data.name + " (User ID: " + data.userId + ")";
-        } else {
-            document.getElementById("loginResult").innerText =
-                data.error || "Login failed";
-        }
-    });
+// Adds hour options to the start and end time dropdowns.
+function loadHourOptions() {
+    const startSelect = document.getElementById("startTime");
+    const endSelect = document.getElementById("endTime");
+
+    startSelect.innerHTML = "";
+    endSelect.innerHTML = "";
+
+    for (let hour = 8; hour <= 18; hour++) {
+        const time = String(hour).padStart(2, "0") + ":00";
+
+        const startOption = document.createElement("option");
+        startOption.value = time;
+        startOption.textContent = time;
+        startSelect.appendChild(startOption);
+
+        const endOption = document.createElement("option");
+        endOption.value = time;
+        endOption.textContent = time;
+        endSelect.appendChild(endOption);
+    }
+
+    startSelect.value = "09:00";
+    endSelect.value = "10:00";
 }
 
+// Loads all rooms into the booking dropdown and admin room list.
 function loadRooms() {
-    fetch(API + "/rooms")
+    fetch(ROOMBOOK_API + "/rooms")
     .then(res => res.json())
     .then(data => {
+        roomsCache = data;
         const select = document.getElementById("roomSelect");
         select.innerHTML = "";
 
@@ -83,33 +186,186 @@ function loadRooms() {
             option.textContent = room.name + " - Capacity: " + room.capacity;
             select.appendChild(option);
         });
+
+        renderAdminRooms();
+    })
+    .catch(() => {
+        document.getElementById("bookingResult").innerText =
+            "Could not load rooms. Please make sure the server is running.";
     });
 }
 
+// Displays rooms with edit/delete buttons for admin users.
+function renderAdminRooms() {
+    if (loggedInUserRole !== "ADMIN") {
+        return;
+    }
+
+    const list = document.getElementById("roomsList");
+    list.innerHTML = "";
+
+    roomsCache.forEach(room => {
+        const li = document.createElement("li");
+        li.className = "room-item";
+
+        const details = document.createElement("div");
+        details.className = "room-main";
+
+        const name = document.createElement("div");
+        name.className = "reservation-room";
+        name.textContent = room.name;
+
+        const meta = document.createElement("div");
+        meta.className = "reservation-meta";
+        meta.textContent =
+            "Capacity: " + room.capacity + " | " + (room.location || "No location");
+
+        const equipment = document.createElement("div");
+        equipment.className = "reservation-meta";
+        equipment.textContent = room.equipment || "No equipment listed";
+
+        details.appendChild(name);
+        details.appendChild(meta);
+        details.appendChild(equipment);
+        li.appendChild(details);
+
+        const actions = document.createElement("div");
+        actions.className = "room-actions";
+
+        const editButton = document.createElement("button");
+        editButton.className = "secondary";
+        editButton.textContent = "Edit";
+        editButton.onclick = function() {
+            editRoom(room);
+        };
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "danger";
+        deleteButton.textContent = "Delete";
+        deleteButton.onclick = function() {
+            deleteRoom(room.id);
+        };
+
+        actions.appendChild(editButton);
+        actions.appendChild(deleteButton);
+        li.appendChild(actions);
+        list.appendChild(li);
+    });
+}
+
+// Creates a new room or updates an existing room.
+function saveRoom() {
+    const roomId = document.getElementById("roomId").value;
+    const payload = {
+        name: document.getElementById("roomName").value,
+        capacity: parseInt(document.getElementById("roomCapacity").value),
+        location: document.getElementById("roomLocation").value,
+        equipment: document.getElementById("roomEquipment").value
+    };
+
+    const url = roomId ? ROOMBOOK_API + "/rooms/" + roomId : ROOMBOOK_API + "/rooms";
+    const method = roomId ? "PUT" : "POST";
+
+    fetch(url, {
+        method,
+        headers: {
+            "Content-Type": "application/json",
+            // The backend uses this user id to check if the user is an admin.
+            "X-User-Id": loggedInUserId
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById("roomResult").innerText = data.error;
+        } else {
+            document.getElementById("roomResult").innerText =
+                roomId ? "Room updated successfully." : "Room created successfully.";
+            resetRoomForm();
+            loadRooms();
+        }
+    })
+    .catch(() => {
+        document.getElementById("roomResult").innerText =
+            "Could not save room. Please try again.";
+    });
+}
+
+// Fills the room form with the selected room so it can be edited.
+function editRoom(room) {
+    document.getElementById("roomId").value = room.id;
+    document.getElementById("roomName").value = room.name;
+    document.getElementById("roomCapacity").value = room.capacity;
+    document.getElementById("roomLocation").value = room.location || "";
+    document.getElementById("roomEquipment").value = room.equipment || "";
+    document.getElementById("roomResult").innerText = "Editing " + room.name + ".";
+}
+
+// Deletes a room. Only admin users can do this on the backend.
+function deleteRoom(roomId) {
+    fetch(ROOMBOOK_API + "/rooms/" + roomId, {
+        method: "DELETE",
+        headers: {
+            "X-User-Id": loggedInUserId
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById("roomResult").innerText = data.error;
+        } else {
+            document.getElementById("roomResult").innerText =
+                data.message || "Room deleted successfully.";
+            resetRoomForm();
+            loadRooms();
+        }
+    })
+    .catch(() => {
+        document.getElementById("roomResult").innerText =
+            "Could not delete room. Please try again.";
+    });
+}
+
+// Clears the room management form.
+function resetRoomForm() {
+    document.getElementById("roomId").value = "";
+    document.getElementById("roomName").value = "";
+    document.getElementById("roomCapacity").value = "";
+    document.getElementById("roomLocation").value = "";
+    document.getElementById("roomEquipment").value = "";
+}
+
+// Checks if the selected room is free for the selected date and time.
 function checkAvailability() {
     const roomId = document.getElementById("roomSelect").value;
     const date = document.getElementById("bookingDate").value;
     const startTime = document.getElementById("startTime").value;
     const endTime = document.getElementById("endTime").value;
 
-    fetch(`${API}/rooms/${roomId}/availability?date=${date}&startTime=${startTime}&endTime=${endTime}`)
+    fetch(`${ROOMBOOK_API}/rooms/${roomId}/availability?date=${date}&startTime=${startTime}&endTime=${endTime}`)
     .then(res => res.json())
     .then(data => {
         document.getElementById("bookingResult").innerText = data.message;
+    })
+    .catch(() => {
+        document.getElementById("bookingResult").innerText =
+            "Could not check availability. Please try again.";
     });
 }
 
+// Creates a reservation for the logged-in user.
 function createBooking() {
     if (!loggedInUserId) {
         document.getElementById("bookingResult").innerText = "Please login first.";
         return;
     }
 
-    fetch(API + "/reservations", {
+    fetch(ROOMBOOK_API + "/reservations", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            userId: loggedInUserId,
+            userId: parseInt(loggedInUserId),
             roomId: parseInt(document.getElementById("roomSelect").value),
             date: document.getElementById("bookingDate").value,
             startTime: document.getElementById("startTime").value,
@@ -125,33 +381,113 @@ function createBooking() {
                 "Booking created successfully!";
             loadReservations();
         }
+    })
+    .catch(() => {
+        document.getElementById("bookingResult").innerText =
+            "Could not create booking. Please try again.";
     });
 }
 
+// Loads all reservations for the logged-in user.
 function loadReservations() {
     if (!loggedInUserId) {
         alert("Please login first.");
         return;
     }
 
-    fetch(API + "/reservations/user/" + loggedInUserId)
+    fetch(ROOMBOOK_API + "/reservations/user/" + loggedInUserId)
     .then(res => res.json())
     .then(data => {
         const list = document.getElementById("reservationsList");
         list.innerHTML = "";
 
+        if (data.length === 0) {
+            const empty = document.createElement("li");
+            empty.className = "empty-state";
+            empty.textContent = "No reservations yet.";
+            list.appendChild(empty);
+            return;
+        }
+
         data.forEach(r => {
             const li = document.createElement("li");
-            li.textContent =
-                "Room " + r.roomId + " | " +
-                r.date + " | " +
-                r.startTime + " - " + r.endTime +
-                " | Status: " + r.status;
+            li.className = "reservation-item";
+
+            if (r.status === "CANCELLED") {
+                li.classList.add("cancelled");
+            }
+
+            const details = document.createElement("div");
+            details.className = "reservation-main";
+
+            const room = document.createElement("div");
+            room.className = "reservation-room";
+            room.textContent = "Room " + r.roomId;
+
+            const meta = document.createElement("div");
+            meta.className = "reservation-meta";
+            meta.textContent = r.date + " | " + r.startTime + " - " + r.endTime;
+
+            const status = document.createElement("span");
+            status.className = "badge";
+            status.textContent = r.status;
+
+            if (r.status === "CANCELLED") {
+                status.classList.add("cancelled");
+            }
+
+            details.appendChild(room);
+            details.appendChild(meta);
+            details.appendChild(status);
+            li.appendChild(details);
+
+            if (r.status === "CONFIRMED") {
+                const cancelButton = document.createElement("button");
+                cancelButton.className = "danger";
+                cancelButton.textContent = "Cancel";
+                cancelButton.onclick = function() {
+                    cancelReservation(r.resId);
+                };
+                li.appendChild(cancelButton);
+            }
+
             list.appendChild(li);
         });
+    })
+    .catch(() => {
+        document.getElementById("bookingResult").innerText =
+            "Could not load reservations. Please try again.";
     });
 }
-</script>
 
+// Cancels an existing reservation.
+function cancelReservation(resId) {
+    fetch(ROOMBOOK_API + "/reservations/" + resId, {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById("bookingResult").innerText = data.error;
+        } else {
+            document.getElementById("bookingResult").innerText =
+                data.message || "Reservation cancelled successfully.";
+            loadReservations();
+        }
+    })
+    .catch(() => {
+        document.getElementById("bookingResult").innerText =
+            "Could not cancel reservation. Please try again.";
+    });
+}
+
+// Clears login data and sends the user back to the login page.
+function logout() {
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+    window.location.href = "login.html";
+}
+</script>
 </body>
 </html>

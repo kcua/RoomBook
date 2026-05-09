@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomBook Register</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main class="auth-page">
+    <section class="auth-panel">
+        <h1>Create Account</h1>
+        <p>Set up your RoomBook access.</p>
+
+        <div class="auth-form">
+            <div>
+                <label for="registerName">Name</label>
+                <input id="registerName" placeholder="Full name">
+            </div>
+
+            <div>
+                <label for="registerEmail">Email</label>
+                <input id="registerEmail" type="email" placeholder="you@example.com">
+            </div>
+
+            <div>
+                <label for="registerPassword">Password</label>
+                <input id="registerPassword" type="password" placeholder="Password">
+            </div>
+
+            <button onclick="register()">Register</button>
+        </div>
+
+        <p id="registerResult" class="status-message"></p>
+
+        <p class="auth-footer">Already have an account? <a href="login.html">Login here</a></p>
+    </section>
+</main>
+
+<script src="register.js"></script>
+
+</body>
+</html>
