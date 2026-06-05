@@ -123,10 +123,11 @@ const ROOMBOOK_API = "http://localhost:8080/api";
 let loggedInUserId = localStorage.getItem("userId");
 let loggedInUserRole = localStorage.getItem("userRole");
 let roomsCache = [];
+let showAllReservations = false;
 
 // Runs when the page loads. It checks login status and loads the page data.
 window.onload = function() {
-    if (!loggedInUserId) {
+    if (!loggedInUserId) { //if user is not logged in, it sends them back to login page
         window.location.href = "login.html";
         return;
     }
@@ -147,6 +148,7 @@ window.onload = function() {
 
 // Adds hour options to the start and end time dropdowns.
 function loadHourOptions() {
+    //dropdown menus
     const startSelect = document.getElementById("startTime");
     const endSelect = document.getElementById("endTime");
 
@@ -409,7 +411,9 @@ function loadReservations() {
             return;
         }
 
-        data.forEach(r => {
+        const visibleReservations = showAllReservations ? data : data.slice(0, 5);
+
+        visibleReservations.forEach(r => {
             const li = document.createElement("li");
             li.className = "reservation-item";
 
@@ -453,6 +457,24 @@ function loadReservations() {
 
             list.appendChild(li);
         });
+
+        if (data.length > 5) {
+            const historyAction = document.createElement("li");
+            historyAction.className = "reservations-history-action";
+
+            const historyButton = document.createElement("button");
+            historyButton.className = "secondary";
+            historyButton.textContent = showAllReservations
+                ? "Show only 5 reservations"
+                : "View all reservation history";
+            historyButton.onclick = function() {
+                showAllReservations = !showAllReservations;
+                loadReservations();
+            };
+
+            historyAction.appendChild(historyButton);
+            list.appendChild(historyAction);
+        }
     })
     .catch(() => {
         document.getElementById("bookingResult").innerText =
