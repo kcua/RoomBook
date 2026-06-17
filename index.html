@@ -15,6 +15,7 @@
         </div>
         <div class="user-actions">
             <p id="userStatus" class="muted"></p>
+            <button id="analyticsButton" class="secondary hidden" onclick="window.location.href='admin-dashboard.html'">Analytics</button>
             <button class="secondary" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -139,6 +140,7 @@ window.onload = function() {
     if (loggedInUserRole === "ADMIN") {
         // Admin users can see the room management controls.
         document.getElementById("adminRoomsPanel").classList.remove("hidden");
+        document.getElementById("analyticsButton").classList.remove("hidden");
     }
 
     loadHourOptions();

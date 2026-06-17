@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomBook Admin Analytics</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main class="app-shell">
+    <header class="topbar">
+        <div class="brand">
+            <h1>Admin Analytics</h1>
+            <p>Booking statistics, room utilisation, user activity, and security metrics.</p>
+        </div>
+        <div class="user-actions">
+            <p id="adminStatus" class="muted"></p>
+            <button class="secondary" onclick="window.location.href='index.html'">Bookings</button>
+            <button class="secondary" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <section class="analytics-grid">
+        <div class="metric-card">
+            <span>Total Bookings</span>
+            <strong id="totalBookings">0</strong>
+        </div>
+        <div class="metric-card">
+            <span>Confirmed</span>
+            <strong id="confirmedBookings">0</strong>
+        </div>
+        <div class="metric-card">
+            <span>Cancelled</span>
+            <strong id="cancelledBookings">0</strong>
+        </div>
+        <div class="metric-card">
+            <span>Rooms</span>
+            <strong id="totalRooms">0</strong>
+        </div>
+        <div class="metric-card">
+            <span>Users</span>
+            <strong id="totalUsers">0</strong>
+        </div>
+    </section>
+
+    <section class="dashboard-grid">
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Room Utilisation</h2>
+            </div>
+            <div id="roomUtilisationList" class="report-list"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Booking Trends</h2>
+            </div>
+            <div id="bookingTrendsList" class="report-list"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h2>User Activity</h2>
+            </div>
+            <div id="userActivityList" class="report-list"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Security Metrics</h2>
+            </div>
+            <div class="security-grid">
+                <div>
+                    <span>Admin Users</span>
+                    <strong id="adminUsers">0</strong>
+                </div>
+                <div>
+                    <span>Standard Users</span>
+                    <strong id="standardUsers">0</strong>
+                </div>
+                <div>
+                    <span>Cancellation Rate</span>
+                    <strong id="cancellationRate">0%</strong>
+                </div>
+                <div>
+                    <span>Login Event Tracking</span>
+                    <strong id="loginEventTracking">-</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <p id="analyticsResult" class="status-message"></p>
+</main>
+
+<script src="admin-dashboard.js"></script>
+</body>
+</html>

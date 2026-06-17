@@ -143,6 +143,43 @@ a {
     align-items: start;
 }
 
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 22px;
+    align-items: start;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.metric-card {
+    display: grid;
+    gap: 8px;
+    min-height: 112px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow);
+}
+
+.metric-card span,
+.security-grid span {
+    color: var(--muted);
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.metric-card strong {
+    font-size: 2rem;
+    line-height: 1;
+}
+
 .hidden {
     display: none;
 }
@@ -220,6 +257,58 @@ a {
     margin: 0;
     padding: 0;
     list-style: none;
+}
+
+.report-list {
+    display: grid;
+    gap: 12px;
+}
+
+.report-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    background: #ffffff;
+}
+
+.report-main {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.report-main span {
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+.report-value {
+    color: var(--primary);
+    font-weight: 800;
+    text-align: right;
+}
+
+.security-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    gap: 14px;
+}
+
+.security-grid div {
+    display: grid;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    background: #ffffff;
+}
+
+.security-grid strong {
+    font-size: 1.15rem;
 }
 
 .reservation-item,
@@ -416,9 +505,13 @@ a {
     .topbar,
     .user-actions,
     .layout-grid,
+    .dashboard-grid,
+    .analytics-grid,
     .admin-grid,
     .reservation-item,
-    .room-item {
+    .room-item,
+    .report-row,
+    .security-grid {
         grid-template-columns: 1fr;
     }
 
@@ -442,6 +535,10 @@ a {
 
     .room-actions {
         justify-content: stretch;
+    }
+
+    .report-value {
+        text-align: left;
     }
 
     .login-page::before {

@@ -133,6 +133,10 @@ public class UserService {
             throw new IllegalArgumentException("Password is required.");
         }
 
+        if (!PasswordUtil.isStrongPassword(req.getPassword())) {
+            throw new IllegalArgumentException(PasswordUtil.STRONG_PASSWORD_MESSAGE);
+        }
+
     }
 
     // Returns true when the given user id belongs to an admin account.

@@ -11,6 +11,9 @@ import java.security.MessageDigest;
  * @author Karl Cuaresma
  */
 public class PasswordUtil {
+    public static final String STRONG_PASSWORD_MESSAGE =
+            "Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.";
+
     // Converts a plain password into a SHA-256 hashed password.
     public static String hashPassword(String password) {
         try {
@@ -31,5 +34,38 @@ public class PasswordUtil {
             // Show a clear error if hashing fails.
             throw new RuntimeException("Password hashing error: " + e.getMessage());
         }
+    }
+
+    public static boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+
+        boolean hasUppercase = false;
+        boolean hasLowercase = false;
+        boolean hasNumber = false;
+        boolean hasSpecial = false;
+
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                hasUppercase = true;
+            } else if (Character.isLowerCase(c)) {
+                hasLowercase = true;
+            } else if (Character.isDigit(c)) {
+                hasNumber = true;
+            } else {
+                hasSpecial = true;
+            }
+        }
+
+        return hasUppercase && hasLowercase && hasNumber && hasSpecial;
+    }
+    
+     public static void main(String[] args) {
+        String password = "Admin123456!";
+        String hashedPassword = hashPassword(password);
+
+        System.out.println("Plain password: " + password);
+        System.out.println("Hashed password: " + hashedPassword);
     }
 }
