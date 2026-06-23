@@ -6,6 +6,7 @@ package com.mycompany.roombook.api.services;
 
 import com.mycompany.roombook.api.database.DB;
 import com.mycompany.roombook.api.models.User;
+import com.mycompany.roombook.api.models.UserChangePasswordRequest;
 import com.mycompany.roombook.api.models.UserLoginRequest;
 import com.mycompany.roombook.api.models.UserRegisterRequest;
 import java.sql.Connection;
@@ -157,6 +158,37 @@ public class UserService {
         }
     }
 
+    public String changePassword(UserChangePasswordRequest req) {
+        validateChangePassword(req);
+
+        String currentHashedPassword = PasswordUtil.hashPassword(req.getCurrentPassword());
+        String newHashedPassword = PasswordUtil.hashPassword(req.getNewPassword());
+
+        String sql = """
+            UPDATE users
+            SET password = ?
+            WHERE user_id = ? AND password = ?
+        """;
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, newHashedPassword);
+            ps.setInt(2, req.getUserId());
+            ps.setString(3, currentHashedPassword);
+
+            int updatedRows = ps.executeUpdate();
+            if (updatedRows == 0) {
+                throw new IllegalArgumentException("Current password is incorrect.");
+            }
+
+            return "Password changed successfully.";
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (change password): " + e.getMessage(), e);
+        }
+    }
+
     private void validateLogin(UserLoginRequest req) {
         if (req.getEmail() == null || req.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email is required.");
@@ -164,6 +196,24 @@ public class UserService {
 
         if (req.getPassword() == null || req.getPassword().isBlank()) {
             throw new IllegalArgumentException("Password is required.");
+        }
+    }
+
+    private void validateChangePassword(UserChangePasswordRequest req) {
+        if (req.getUserId() <= 0) {
+            throw new IllegalArgumentException("User is required.");
+        }
+
+        if (req.getCurrentPassword() == null || req.getCurrentPassword().isBlank()) {
+            throw new IllegalArgumentException("Current password is required.");
+        }
+
+        if (req.getNewPassword() == null || req.getNewPassword().isBlank()) {
+            throw new IllegalArgumentException("New password is required.");
+        }
+
+        if (!PasswordUtil.isStrongPassword(req.getNewPassword())) {
+            throw new IllegalArgumentException(PasswordUtil.STRONG_PASSWORD_MESSAGE);
         }
     }
 }

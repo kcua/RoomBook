@@ -213,6 +213,14 @@ a {
     margin-bottom: 22px;
 }
 
+.account-panel {
+    margin-top: 22px;
+}
+
+.account-form {
+    max-width: 520px;
+}
+
 .admin-grid {
     display: grid;
     grid-template-columns: minmax(260px, 340px) 1fr;

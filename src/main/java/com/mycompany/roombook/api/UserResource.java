@@ -5,6 +5,7 @@
 package com.mycompany.roombook.api;
 
 import com.mycompany.roombook.api.models.User;
+import com.mycompany.roombook.api.models.UserChangePasswordRequest;
 import com.mycompany.roombook.api.models.UserLoginRequest;
 import com.mycompany.roombook.api.models.UserRegisterRequest;
 import com.mycompany.roombook.api.services.UserService;
@@ -45,6 +46,18 @@ public class UserResource {
         try {
             User user = service.login(req);
             return user;
+        } catch (IllegalArgumentException ex) {
+            return Map.of("error", ex.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/change-password")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Object changePassword(UserChangePasswordRequest req) {
+        try {
+            return Map.of("message", service.changePassword(req));
         } catch (IllegalArgumentException ex) {
             return Map.of("error", ex.getMessage());
         }
