@@ -14,6 +14,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -104,6 +106,131 @@ public class UserService {
         }
     }
 
+    public List<User> getAllUsers() {
+        String sql = "SELECT user_id, name, email, role FROM users ORDER BY name";
+        List<User> users = new ArrayList<>();
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                users.add(mapUserWithoutPassword(rs));
+            }
+
+            return users;
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (list users): " + e.getMessage(), e);
+        }
+    }
+
+    public User createUserByAdmin(UserRegisterRequest req) {
+        validateRegister(req);
+
+        if (emailExists(req.getEmail())) {
+            throw new IllegalArgumentException("Email is already registered.");
+        }
+
+        String role = normalizeRole(req.getRole());
+        String sql = """
+            INSERT INTO users (name, email, password, role)
+            VALUES (?, ?, ?, ?)
+        """;
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            ps.setString(1, req.getName());
+            ps.setString(2, req.getEmail());
+            ps.setString(3, PasswordUtil.hashPassword(req.getPassword()));
+            ps.setString(4, role);
+
+            ps.executeUpdate();
+
+            int newId = 0;
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    newId = keys.getInt(1);
+                }
+            }
+
+            return getUserById(newId);
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (create user): " + e.getMessage(), e);
+        }
+    }
+
+    public User updateUserRole(int userId, String role) {
+        String normalizedRole = normalizeRole(role);
+        User existing = getUserById(userId);
+
+        if (ADMIN_ROLE.equalsIgnoreCase(existing.getRole())
+                && !ADMIN_ROLE.equals(normalizedRole)
+                && countAdminUsers() <= 1) {
+            throw new IllegalArgumentException("At least one admin user is required.");
+        }
+
+        String sql = "UPDATE users SET role = ? WHERE user_id = ?";
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, normalizedRole);
+            ps.setInt(2, userId);
+
+            int updated = ps.executeUpdate();
+            if (updated == 0) {
+                throw new IllegalArgumentException("User not found.");
+            }
+
+            return getUserById(userId);
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (update role): " + e.getMessage(), e);
+        }
+    }
+
+    public String deleteUser(int userId) {
+        User existing = getUserById(userId);
+
+        if (ADMIN_ROLE.equalsIgnoreCase(existing.getRole()) && countAdminUsers() <= 1) {
+            throw new IllegalArgumentException("At least one admin user is required.");
+        }
+
+        try (Connection conn = DB.getConnection()) {
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement deleteReservations =
+                         conn.prepareStatement("DELETE FROM reservations WHERE user_id = ?");
+                 PreparedStatement deleteUser =
+                         conn.prepareStatement("DELETE FROM users WHERE user_id = ?")) {
+
+                deleteReservations.setInt(1, userId);
+                deleteReservations.executeUpdate();
+
+                deleteUser.setInt(1, userId);
+                int deleted = deleteUser.executeUpdate();
+                if (deleted == 0) {
+                    throw new IllegalArgumentException("User not found.");
+                }
+
+                conn.commit();
+                return "User deleted successfully.";
+
+            } catch (SQLException | RuntimeException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (delete user): " + e.getMessage(), e);
+        }
+    }
+
     private boolean emailExists(String email) {
         String sql = "SELECT 1 FROM users WHERE email = ? LIMIT 1";
 
@@ -122,6 +249,10 @@ public class UserService {
     }
 
     private void validateRegister(UserRegisterRequest req) {
+        if (req == null) {
+            throw new IllegalArgumentException("User details are required.");
+        }
+
         if (req.getName() == null || req.getName().isBlank()) {
             throw new IllegalArgumentException("Name is required.");
         }
@@ -138,6 +269,66 @@ public class UserService {
             throw new IllegalArgumentException(PasswordUtil.STRONG_PASSWORD_MESSAGE);
         }
 
+    }
+
+    private User getUserById(int userId) {
+        String sql = "SELECT user_id, name, email, role FROM users WHERE user_id = ?";
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new IllegalArgumentException("User not found.");
+                }
+
+                return mapUserWithoutPassword(rs);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (find user): " + e.getMessage(), e);
+        }
+    }
+
+    private int countAdminUsers() {
+        String sql = "SELECT COUNT(*) FROM users WHERE UPPER(role) = ?";
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, ADMIN_ROLE);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (count admin users): " + e.getMessage(), e);
+        }
+    }
+
+    private User mapUserWithoutPassword(ResultSet rs) throws SQLException {
+        User user = new User();
+        user.setUserId(rs.getInt("user_id"));
+        user.setName(rs.getString("name"));
+        user.setEmail(rs.getString("email"));
+        user.setRole(rs.getString("role"));
+        return user;
+    }
+
+    private String normalizeRole(String role) {
+        if (role == null || role.isBlank()) {
+            throw new IllegalArgumentException("Role is required.");
+        }
+
+        String normalizedRole = role.trim().toUpperCase();
+        if (!DEFAULT_ROLE.equals(normalizedRole) && !ADMIN_ROLE.equals(normalizedRole)) {
+            throw new IllegalArgumentException("Role must be USER or ADMIN.");
+        }
+
+        return normalizedRole;
     }
 
     // Returns true when the given user id belongs to an admin account.

@@ -43,6 +43,41 @@
         </div>
     </section>
 
+    <section class="panel admin-panel">
+        <div class="panel-header">
+            <h2>User Management</h2>
+        </div>
+        <div class="user-management-grid">
+            <form id="createUserForm" class="form-grid">
+                <div>
+                    <label for="newUserName">Name</label>
+                    <input type="text" id="newUserName" required>
+                </div>
+                <div>
+                    <label for="newUserEmail">Email</label>
+                    <input type="email" id="newUserEmail" required>
+                </div>
+                <div>
+                    <label for="newUserPassword">Password</label>
+                    <input type="password" id="newUserPassword" required>
+                </div>
+                <div>
+                    <label for="newUserRole">Role</label>
+                    <select id="newUserRole" required>
+                        <option value="USER">User</option>
+                        <option value="ADMIN">Admin</option>
+                    </select>
+                </div>
+                <button type="submit">Create User</button>
+            </form>
+
+            <div>
+                <div id="adminUserList" class="users-list"></div>
+                <p id="userManagementResult" class="status-message"></p>
+            </div>
+        </div>
+    </section>
+
     <section class="dashboard-grid">
         <div class="panel">
             <div class="panel-header">

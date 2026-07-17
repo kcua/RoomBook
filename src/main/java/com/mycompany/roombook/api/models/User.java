@@ -9,11 +9,12 @@ package com.mycompany.roombook.api.models;
  * @author kcuar
  */
 public class User {
-        private int userId;
+    private int userId;
     private String name;
     private String email;
     private String password;
     private String role;
+    private String sessionToken;
 
     public User() {
     }
@@ -56,5 +57,13 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    public void setSessionToken(String sessionToken) {
+        this.sessionToken = sessionToken;
     }
 }
