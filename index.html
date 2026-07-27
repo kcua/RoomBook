@@ -16,6 +16,7 @@
         <div class="user-actions">
             <p id="userStatus" class="muted"></p>
             <button id="analyticsButton" class="secondary hidden" onclick="window.location.href='admin-dashboard.html'">Analytics</button>
+            <button class="secondary" onclick="window.location.href='my-reservations.html'">My Reservations</button>
             <button class="secondary" onclick="window.location.href='change-password.html'">Change Password</button>
             <button class="secondary" onclick="logout()">Logout</button>
         </div>
@@ -104,17 +105,6 @@
                 <p id="bookingResult" class="status-message"></p>
             </div>
         </div>
-
-        <div class="panel">
-            <div class="panel-header">
-                <div>
-                    <h2>My Reservations</h2>
-                    <p class="muted">Active and cancelled bookings.</p>
-                </div>
-                <button class="secondary" onclick="loadReservations()">Refresh</button>
-            </div>
-            <ul id="reservationsList" class="reservations-list"></ul>
-        </div>
     </section>
 
 </main>
@@ -126,7 +116,6 @@ const ROOMBOOK_API = "http://localhost:8080/api";
 let loggedInUserId = localStorage.getItem("userId");
 let loggedInUserRole = localStorage.getItem("userRole");
 let roomsCache = [];
-let showAllReservations = false;
 
 // Runs when the page loads. It checks login status and loads the page data.
 window.onload = function() {
@@ -145,10 +134,29 @@ window.onload = function() {
         document.getElementById("analyticsButton").classList.remove("hidden");
     }
 
+    setBookingDateMinimum();
     loadHourOptions();
     loadRooms();
-    loadReservations();
 };
+
+// Prevents selecting booking dates before today.
+function setBookingDateMinimum() {
+    const dateInput = document.getElementById("bookingDate");
+    const today = getTodayDateValue();
+    dateInput.min = today;
+
+    if (dateInput.value && dateInput.value < today) {
+        dateInput.value = today;
+    }
+}
+
+function getTodayDateValue() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
 
 // Adds hour options to the start and end time dropdowns.
 function loadHourOptions() {
@@ -353,10 +361,12 @@ function checkAvailability() {
     .then(res => res.json())
     .then(data => {
         document.getElementById("bookingResult").innerText = data.message;
+        alert(data.message);
     })
     .catch(() => {
-        document.getElementById("bookingResult").innerText =
-            "Could not check availability. Please try again.";
+        const message = "Could not check availability. Please try again.";
+        document.getElementById("bookingResult").innerText = message;
+        alert(message);
     });
 }
 
@@ -364,6 +374,23 @@ function checkAvailability() {
 function createBooking() {
     if (!loggedInUserId) {
         document.getElementById("bookingResult").innerText = "Please login first.";
+        return;
+    }
+
+    const bookingDate = document.getElementById("bookingDate").value;
+    if (!bookingDate) {
+        document.getElementById("bookingResult").innerText =
+            "Please choose a booking date.";
+        return;
+    }
+
+    if (bookingDate < getTodayDateValue()) {
+        document.getElementById("bookingResult").innerText =
+            "Booking date cannot be in the past.";
+        return;
+    }
+
+    if (!confirm("Confirmed Booking?")) {
         return;
     }
 
@@ -385,125 +412,11 @@ function createBooking() {
         } else {
             document.getElementById("bookingResult").innerText =
                 "Booking created successfully!";
-            loadReservations();
         }
     })
     .catch(() => {
         document.getElementById("bookingResult").innerText =
             "Could not create booking. Please try again.";
-    });
-}
-
-// Loads all reservations for the logged-in user.
-function loadReservations() {
-    if (!loggedInUserId) {
-        alert("Please login first.");
-        return;
-    }
-
-    fetch(ROOMBOOK_API + "/reservations/user/" + loggedInUserId)
-    .then(res => res.json())
-    .then(data => {
-        const list = document.getElementById("reservationsList");
-        list.innerHTML = "";
-
-        if (data.length === 0) {
-            const empty = document.createElement("li");
-            empty.className = "empty-state";
-            empty.textContent = "No reservations yet.";
-            list.appendChild(empty);
-            return;
-        }
-
-        const visibleReservations = showAllReservations ? data : data.slice(0, 5);
-
-        visibleReservations.forEach(r => {
-            const li = document.createElement("li");
-            li.className = "reservation-item";
-
-            if (r.status === "CANCELLED") {
-                li.classList.add("cancelled");
-            }
-
-            const details = document.createElement("div");
-            details.className = "reservation-main";
-
-            const room = document.createElement("div");
-            room.className = "reservation-room";
-            room.textContent = "Room " + r.roomId;
-
-            const meta = document.createElement("div");
-            meta.className = "reservation-meta";
-            meta.textContent = r.date + " | " + r.startTime + " - " + r.endTime;
-
-            const status = document.createElement("span");
-            status.className = "badge";
-            status.textContent = r.status;
-
-            if (r.status === "CANCELLED") {
-                status.classList.add("cancelled");
-            }
-
-            details.appendChild(room);
-            details.appendChild(meta);
-            details.appendChild(status);
-            li.appendChild(details);
-
-            if (r.status === "CONFIRMED") {
-                const cancelButton = document.createElement("button");
-                cancelButton.className = "danger";
-                cancelButton.textContent = "Cancel";
-                cancelButton.onclick = function() {
-                    cancelReservation(r.resId);
-                };
-                li.appendChild(cancelButton);
-            }
-
-            list.appendChild(li);
-        });
-
-        if (data.length > 5) {
-            const historyAction = document.createElement("li");
-            historyAction.className = "reservations-history-action";
-
-            const historyButton = document.createElement("button");
-            historyButton.className = "secondary";
-            historyButton.textContent = showAllReservations
-                ? "Show only 5 reservations"
-                : "View all reservation history";
-            historyButton.onclick = function() {
-                showAllReservations = !showAllReservations;
-                loadReservations();
-            };
-
-            historyAction.appendChild(historyButton);
-            list.appendChild(historyAction);
-        }
-    })
-    .catch(() => {
-        document.getElementById("bookingResult").innerText =
-            "Could not load reservations. Please try again.";
-    });
-}
-
-// Cancels an existing reservation.
-function cancelReservation(resId) {
-    fetch(ROOMBOOK_API + "/reservations/" + resId, {
-        method: "DELETE"
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            document.getElementById("bookingResult").innerText = data.error;
-        } else {
-            document.getElementById("bookingResult").innerText =
-                data.message || "Reservation cancelled successfully.";
-            loadReservations();
-        }
-    })
-    .catch(() => {
-        document.getElementById("bookingResult").innerText =
-            "Could not cancel reservation. Please try again.";
     });
 }
 

@@ -60,6 +60,19 @@ public class DBInit {
                         FOREIGN KEY(room_id) REFERENCES rooms(room_id)
                     );
                 """);
+
+                // Login event tracking for admin security metrics.
+                stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS login_events (
+                        login_event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        email TEXT NOT NULL,
+                        user_id INTEGER,
+                        success INTEGER NOT NULL,
+                        message TEXT,
+                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(user_id) REFERENCES users(user_id)
+                    );
+                """);
             }
 
             seedRoomsIfEmpty(conn);

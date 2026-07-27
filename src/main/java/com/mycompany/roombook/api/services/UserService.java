@@ -88,6 +88,7 @@ public class UserService {
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
+                    recordLoginEvent(conn, req.getEmail(), null, false, "Invalid email or password.");
                     throw new IllegalArgumentException("Invalid email or password.");
                 }
 
@@ -98,11 +99,34 @@ public class UserService {
                 user.setPassword(rs.getString("password"));
                 user.setRole(rs.getString("role"));
 
+                recordLoginEvent(conn, user.getEmail(), user.getUserId(), true, "Login successful.");
+
                 return user;
             }
 
         } catch (SQLException e) {
             throw new RuntimeException("DB error (login user): " + e.getMessage(), e);
+        }
+    }
+
+    private void recordLoginEvent(Connection conn, String email, Integer userId, boolean success, String message) {
+        String sql = """
+            INSERT INTO login_events (email, user_id, success, message)
+            VALUES (?, ?, ?, ?)
+        """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, email);
+            if (userId == null) {
+                ps.setNull(2, java.sql.Types.INTEGER);
+            } else {
+                ps.setInt(2, userId);
+            }
+            ps.setInt(3, success ? 1 : 0);
+            ps.setString(4, message);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (record login event): " + e.getMessage(), e);
         }
     }
 

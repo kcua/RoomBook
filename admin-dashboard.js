@@ -162,6 +162,10 @@ function createUser() {
         return;
     }
 
+    if (!confirm("Are you sure you want to create this user?")) {
+        return;
+    }
+
     fetch(ADMIN_API + "/users", {
         method: "POST",
         headers: {
@@ -181,7 +185,12 @@ function createUser() {
     });
 }
 
-function updateUserRole(userId, role) {
+function updateUserRole(userId, role, previousRole, roleSelect) {
+    if (!confirm("Are you sure you want to change this user's role?")) {
+        roleSelect.value = previousRole;
+        return;
+    }
+
     fetch(ADMIN_API + "/users/" + userId + "/role", {
         method: "PUT",
         headers: {
@@ -197,6 +206,7 @@ function updateUserRole(userId, role) {
     })
     .catch(error => {
         showUserManagementMessage(error.message || "Could not update user role.");
+        roleSelect.value = previousRole;
         loadUsers(currentAdminUserId);
     });
 }
@@ -260,7 +270,7 @@ function renderUsers(users) {
         });
         roleSelect.value = user.role;
         roleSelect.addEventListener("change", function() {
-            updateUserRole(user.userId, roleSelect.value);
+            updateUserRole(user.userId, roleSelect.value, user.role, roleSelect);
         });
 
         const deleteButton = document.createElement("button");

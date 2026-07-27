@@ -138,7 +138,7 @@ a {
 
 .layout-grid {
     display: grid;
-    grid-template-columns: minmax(280px, 380px) 1fr;
+    grid-template-columns: minmax(280px, 480px);
     gap: 22px;
     align-items: start;
 }

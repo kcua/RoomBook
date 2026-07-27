@@ -12,6 +12,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,6 +106,14 @@ public class ReservationService {
 
         if (req.getDate() == null || req.getDate().isBlank())
             throw new IllegalArgumentException("date is required (YYYY-MM-DD).");
+
+        try {
+            LocalDate bookingDate = LocalDate.parse(req.getDate());
+            if (bookingDate.isBefore(LocalDate.now()))
+                throw new IllegalArgumentException("Booking date cannot be in the past.");
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("date must be a valid date (YYYY-MM-DD).");
+        }
 
         if (req.getStartTime() == null || req.getStartTime().isBlank())
             throw new IllegalArgumentException("startTime is required (HH:MM).");

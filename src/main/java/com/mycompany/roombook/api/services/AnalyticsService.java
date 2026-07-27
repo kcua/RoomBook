@@ -152,11 +152,37 @@ public class AnalyticsService {
             int cancelled = ((Number) getSummary().getOrDefault("cancelledBookings", 0)).intValue();
             metrics.put("cancelledBookings", cancelled);
             metrics.put("cancellationRate", total == 0 ? 0 : Math.round((cancelled * 1000.0 / total)) / 10.0);
-            metrics.put("loginEventTracking", "Not enabled yet");
+            metrics.put("loginEventTracking", getLoginEventTrackingSummary());
             return metrics;
 
         } catch (SQLException e) {
             throw new RuntimeException("DB error (security metrics): " + e.getMessage(), e);
+        }
+    }
+
+    private String getLoginEventTrackingSummary() {
+        String sql = """
+            SELECT
+                COUNT(*) AS total_events,
+                SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) AS successful_logins,
+                SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) AS failed_logins
+            FROM login_events
+        """;
+
+        try (Connection conn = DB.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (!rs.next()) {
+                return "Enabled - 0 events";
+            }
+
+            return "Enabled - " + rs.getInt("total_events") + " events ("
+                    + rs.getInt("successful_logins") + " successful, "
+                    + rs.getInt("failed_logins") + " failed)";
+
+        } catch (SQLException e) {
+            throw new RuntimeException("DB error (login event metrics): " + e.getMessage(), e);
         }
     }
 

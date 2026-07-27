@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reservations - RoomBook</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<main class="app-shell">
+    <header class="topbar">
+        <div class="brand">
+            <h1>RoomBook</h1>
+            <p>Review and manage your reservations.</p>
+        </div>
+        <div class="user-actions">
+            <p id="userStatus" class="muted"></p>
+            <button class="secondary" onclick="window.location.href='index.html'">Create Booking</button>
+            <button class="secondary" onclick="window.location.href='change-password.html'">Change Password</button>
+            <button class="secondary" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <section class="panel">
+        <div class="panel-header">
+            <div>
+                <h2>My Reservations</h2>
+                <p class="muted">Active and cancelled bookings.</p>
+            </div>
+            <button class="secondary" onclick="loadReservations()">Refresh</button>
+        </div>
+        <ul id="reservationsList" class="reservations-list"></ul>
+        <p id="reservationsResult" class="status-message"></p>
+    </section>
+</main>
+
+<script>
+const ROOMBOOK_API = "http://localhost:8080/api";
+
+let loggedInUserId = localStorage.getItem("userId");
+let loggedInUserRole = localStorage.getItem("userRole");
+let showAllReservations = false;
+
+window.onload = function() {
+    if (!loggedInUserId) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    const userName = localStorage.getItem("userName") || "User";
+    document.getElementById("userStatus").innerText =
+        "Logged in as " + userName + (loggedInUserRole ? " (" + loggedInUserRole + ")" : "");
+
+    loadReservations();
+};
+
+// Loads all reservations for the logged-in user.
+function loadReservations() {
+    if (!loggedInUserId) {
+        alert("Please login first.");
+        return;
+    }
+
+    document.getElementById("reservationsResult").innerText = "";
+
+    fetch(ROOMBOOK_API + "/reservations/user/" + loggedInUserId)
+    .then(res => res.json())
+    .then(data => {
+        const list = document.getElementById("reservationsList");
+        list.innerHTML = "";
+
+        if (data.length === 0) {
+            const empty = document.createElement("li");
+            empty.className = "empty-state";
+            empty.textContent = "No reservations yet.";
+            list.appendChild(empty);
+            return;
+        }
+
+        const visibleReservations = showAllReservations ? data : data.slice(0, 5);
+
+        visibleReservations.forEach(r => {
+            const li = document.createElement("li");
+            li.className = "reservation-item";
+
+            if (r.status === "CANCELLED") {
+                li.classList.add("cancelled");
+            }
+
+            const details = document.createElement("div");
+            details.className = "reservation-main";
+
+            const room = document.createElement("div");
+            room.className = "reservation-room";
+            room.textContent = "Room " + r.roomId;
+
+            const meta = document.createElement("div");
+            meta.className = "reservation-meta";
+            meta.textContent = r.date + " | " + r.startTime + " - " + r.endTime;
+
+            const status = document.createElement("span");
+            status.className = "badge";
+            status.textContent = r.status;
+
+            if (r.status === "CANCELLED") {
+                status.classList.add("cancelled");
+            }
+
+            details.appendChild(room);
+            details.appendChild(meta);
+            details.appendChild(status);
+            li.appendChild(details);
+
+            if (r.status === "CONFIRMED") {
+                const cancelButton = document.createElement("button");
+                cancelButton.className = "danger";
+                cancelButton.textContent = "Cancel";
+                cancelButton.onclick = function() {
+                    cancelReservation(r.resId);
+                };
+                li.appendChild(cancelButton);
+            }
+
+            list.appendChild(li);
+        });
+
+        if (data.length > 5) {
+            const historyAction = document.createElement("li");
+            historyAction.className = "reservations-history-action";
+
+            const historyButton = document.createElement("button");
+            historyButton.className = "secondary";
+            historyButton.textContent = showAllReservations
+                ? "Show only 5 reservations"
+                : "View all reservation history";
+            historyButton.onclick = function() {
+                showAllReservations = !showAllReservations;
+                loadReservations();
+            };
+
+            historyAction.appendChild(historyButton);
+            list.appendChild(historyAction);
+        }
+    })
+    .catch(() => {
+        document.getElementById("reservationsResult").innerText =
+            "Could not load reservations. Please try again.";
+    });
+}
+
+// Cancels an existing reservation.
+function cancelReservation(resId) {
+    if (!confirm("Are you sure you want to cancel your booking?")) {
+        return;
+    }
+
+    fetch(ROOMBOOK_API + "/reservations/" + resId, {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById("reservationsResult").innerText = data.error;
+        } else {
+            document.getElementById("reservationsResult").innerText =
+                data.message || "Reservation cancelled successfully.";
+            loadReservations();
+        }
+    })
+    .catch(() => {
+        document.getElementById("reservationsResult").innerText =
+            "Could not cancel reservation. Please try again.";
+    });
+}
+
+function logout() {
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+    window.location.href = "login.html";
+}
+</script>
+</body>
+</html>
