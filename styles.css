@@ -83,6 +83,22 @@ select:focus {
     border-color: var(--primary);
 }
 
+.room-details {
+    display: grid;
+    gap: 6px;
+    margin-top: 10px;
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--muted);
+    background: #f7fbfd;
+}
+
+.room-details strong {
+    color: var(--text);
+}
+
 label {
     display: block;
     margin-bottom: 7px;
@@ -456,6 +472,11 @@ a {
 
 .reservation-meta {
     color: var(--muted);
+}
+
+.reservation-equipment {
+    color: var(--text);
+    font-weight: 700;
 }
 
 .badge {

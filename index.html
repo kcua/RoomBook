@@ -78,6 +78,7 @@
                 <div>
                     <label for="roomSelect">Room</label>
                     <select id="roomSelect"></select>
+                    <div id="selectedRoomDetails" class="room-details hidden"></div>
                 </div>
 
                 <div>
@@ -136,6 +137,7 @@ window.onload = function() {
 
     setBookingDateMinimum();
     loadHourOptions();
+    document.getElementById("roomSelect").addEventListener("change", updateSelectedRoomDetails);
     loadRooms();
 };
 
@@ -201,12 +203,42 @@ function loadRooms() {
             select.appendChild(option);
         });
 
+        updateSelectedRoomDetails();
         renderAdminRooms();
     })
     .catch(() => {
         document.getElementById("bookingResult").innerText =
             "Could not load rooms. Please make sure the server is running.";
     });
+}
+
+// Shows the selected room details so users can see equipment before booking.
+function updateSelectedRoomDetails() {
+    const selectedRoomId = parseInt(document.getElementById("roomSelect").value);
+    const selectedRoom = roomsCache.find(room => room.id === selectedRoomId);
+    const details = document.getElementById("selectedRoomDetails");
+
+    if (!selectedRoom) {
+        details.classList.add("hidden");
+        details.innerHTML = "";
+        return;
+    }
+
+    details.classList.remove("hidden");
+    details.innerHTML = "";
+
+    const location = document.createElement("span");
+    location.textContent = "Location: " + (selectedRoom.location || "No location listed");
+
+    const capacity = document.createElement("span");
+    capacity.textContent = "Capacity: " + selectedRoom.capacity;
+
+    const equipment = document.createElement("strong");
+    equipment.textContent = "Equipment: " + (selectedRoom.equipment || "No equipment listed");
+
+    details.appendChild(location);
+    details.appendChild(capacity);
+    details.appendChild(equipment);
 }
 
 // Displays rooms with edit/delete buttons for admin users.

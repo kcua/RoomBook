@@ -40,6 +40,7 @@ const ROOMBOOK_API = "http://localhost:8080/api";
 let loggedInUserId = localStorage.getItem("userId");
 let loggedInUserRole = localStorage.getItem("userRole");
 let showAllReservations = false;
+let roomsCache = [];
 
 window.onload = function() {
     if (!loggedInUserId) {
@@ -63,9 +64,11 @@ function loadReservations() {
 
     document.getElementById("reservationsResult").innerText = "";
 
-    fetch(ROOMBOOK_API + "/reservations/user/" + loggedInUserId)
-    .then(res => res.json())
-    .then(data => {
+    Promise.all([
+        fetch(ROOMBOOK_API + "/reservations/user/" + loggedInUserId).then(res => res.json()),
+        loadRooms()
+    ])
+    .then(([data]) => {
         const list = document.getElementById("reservationsList");
         list.innerHTML = "";
 
@@ -80,6 +83,7 @@ function loadReservations() {
         const visibleReservations = showAllReservations ? data : data.slice(0, 5);
 
         visibleReservations.forEach(r => {
+            const roomDetails = findRoom(r.roomId);
             const li = document.createElement("li");
             li.className = "reservation-item";
 
@@ -92,11 +96,19 @@ function loadReservations() {
 
             const room = document.createElement("div");
             room.className = "reservation-room";
-            room.textContent = "Room " + r.roomId;
+            room.textContent = roomDetails ? roomDetails.name : "Room " + r.roomId;
 
             const meta = document.createElement("div");
             meta.className = "reservation-meta";
             meta.textContent = r.date + " | " + r.startTime + " - " + r.endTime;
+
+            const roomMeta = document.createElement("div");
+            roomMeta.className = "reservation-meta";
+            roomMeta.textContent = getRoomMetaText(roomDetails);
+
+            const equipment = document.createElement("div");
+            equipment.className = "reservation-equipment";
+            equipment.textContent = "Equipment: " + getRoomEquipmentText(roomDetails);
 
             const status = document.createElement("span");
             status.className = "badge";
@@ -108,6 +120,8 @@ function loadReservations() {
 
             details.appendChild(room);
             details.appendChild(meta);
+            details.appendChild(roomMeta);
+            details.appendChild(equipment);
             details.appendChild(status);
             li.appendChild(details);
 
@@ -146,6 +160,40 @@ function loadReservations() {
         document.getElementById("reservationsResult").innerText =
             "Could not load reservations. Please try again.";
     });
+}
+
+// Loads room data so reservations can show room name, capacity, location, and equipment.
+function loadRooms() {
+    if (roomsCache.length > 0) {
+        return Promise.resolve(roomsCache);
+    }
+
+    return fetch(ROOMBOOK_API + "/rooms")
+    .then(res => res.json())
+    .then(data => {
+        roomsCache = data;
+        return roomsCache;
+    });
+}
+
+function findRoom(roomId) {
+    return roomsCache.find(room => room.id === roomId);
+}
+
+function getRoomMetaText(room) {
+    if (!room) {
+        return "Room details unavailable";
+    }
+
+    return "Capacity: " + room.capacity + " | " + (room.location || "No location listed");
+}
+
+function getRoomEquipmentText(room) {
+    if (!room) {
+        return "Room details unavailable";
+    }
+
+    return room.equipment || "No equipment listed";
 }
 
 // Cancels an existing reservation.
